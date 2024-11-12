@@ -1,6 +1,5 @@
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLineEdit, QHBoxLayout, QPushButton, QFileDialog, QGroupBox, \
-    QSizePolicy
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLineEdit, QHBoxLayout, QPushButton, QFileDialog, QGroupBox
 
 from scripts import get_version
 
@@ -12,7 +11,7 @@ class FileDialogWindow(QWidget):
 
         # Используем для сохранения путей
         self.saved_file_paths = {
-            'adb': '',
+            # 'adb': '',
             'firmware': '',
             'launcher': '',
             'voiceman': '',
@@ -23,7 +22,7 @@ class FileDialogWindow(QWidget):
 
         # Используем для текущих путей
         self.current_file_paths = {
-            'adb': '',
+            # 'adb': '',
             'firmware': '',
             'launcher': '',
             'voiceman': '',
@@ -39,7 +38,7 @@ class FileDialogWindow(QWidget):
         self.setLayout(self.layout)
 
         # Добавляем виджеты QLineEdit из self.current_file_paths в макет
-        self.add_file_selector('Указать файл ADB', 'adb', 'exe')
+        # self.add_file_selector('Указать файл ADB', 'adb', 'exe')
 
         self.add_file_selector('Указать файл прошивки', 'firmware', 'zip')
 

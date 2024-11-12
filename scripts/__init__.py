@@ -5,11 +5,12 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
 def get_version():
-    return 'v0.8.3.11'
+    return 'v0.8.3.12'
 
 
 # Полный путь к adb.exe
-adb_path = 'C:\\ADB\\adb.exe'
+# adb_path = 'C:\\ADB\\adb.exe'
+adb_path = '/ADB\\adb.exe'
 
 # Корень устройства
 root_path = '/storage/emulated/0/'
