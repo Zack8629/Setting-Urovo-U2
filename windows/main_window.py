@@ -1,5 +1,10 @@
+import os
+import sys
+
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QTextEdit, QPushButton, QCheckBox, QProgressBar
+from PyQt5.QtGui import QIcon
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QTextEdit, QPushButton, QCheckBox, QProgressBar, \
+    QMenuBar, QAction, QMessageBox, QDialog
 
 from scripts import get_version
 from scripts.a_1_check import check_devices
@@ -19,9 +24,18 @@ class MainWindow(QWidget):
         self.online_device = []
         self.other_device = []
 
+        # Устанавливаем иконку для окна
+        self.setWindowIcon(QIcon(self.resource_path('icons/main.ico')))
+
         # Основные компоненты интерфейса
         self.main_layout = QVBoxLayout()
         self.columns_layout = QHBoxLayout()
+
+        # Создание меню
+        self.menu_bar = QMenuBar(self)
+
+        self.file_menu = self.menu_bar.addMenu('Файл')
+        self.help_menu = self.menu_bar.addMenu('Справка')
 
         # Левый столбец - прошивка
         self.left_column_layout = QVBoxLayout()
@@ -38,7 +52,7 @@ class MainWindow(QWidget):
         self.textedit_unauthorized = QTextEdit()
 
         self.button_step_config = QPushButton('Настройка по шагам')
-        # self.button_step_config.setEnabled(False)
+        self.button_step_config.setEnabled(False)
 
         self.button_select_files = QPushButton('Указать файлы')
         # self.button_select_files.setEnabled(False)
@@ -52,7 +66,7 @@ class MainWindow(QWidget):
         self.button_configure = QPushButton('Настроить')
         self.button_configure.setEnabled(False)
 
-        self.checkbox_shutdown = QCheckBox('Выключить после настройки')
+        # self.checkbox_shutdown = QCheckBox('Выключить после настройки')
         self.button_shutdown = QPushButton('Выключить')
         self.button_shutdown.setEnabled(False)
 
@@ -64,9 +78,42 @@ class MainWindow(QWidget):
     def init_ui(self):
         self.setWindowTitle(f'Прошивка Urovo U2 {get_version()}')
 
-        # Основные компоненты интерфейса
-        self.setLayout(self.main_layout)
+        # Добавление меню в главное окно
+        self.main_layout.setMenuBar(self.menu_bar)
 
+        # Создание действий для меню 'Файл'
+        open_action = QAction('Указать файлы', self)
+        open_action.triggered.connect(self.show_file_dialog)
+
+        shutdown_checkbox_action = QAction('Выключить после настройки', self)
+        shutdown_checkbox_action.setCheckable(True)
+        shutdown_checkbox_action.setChecked(False)
+        # shutdown_checkbox_action.triggered.connect(
+        #     lambda state: self.checkbox_shutdown.setChecked(state)
+        # )
+
+        exit_action = QAction('Выход', self)
+        exit_action.triggered.connect(self.close)
+
+        self.file_menu.addAction(open_action)
+        self.file_menu.addAction(shutdown_checkbox_action)
+        self.file_menu.addAction(exit_action)
+
+        instruction_action = QAction('Инструкция', self)
+        instruction_action.triggered.connect(self.show_instruction_dialog)
+
+        step_config_action = QAction('Настройка по шагам', self)
+        step_config_action.triggered.connect(self.show_step_config_dialog)
+
+        # Создание действий для меню 'Справка'
+        about_action = QAction('О программе', self)
+        about_action.triggered.connect(self.show_about_dialog)
+
+        self.help_menu.addAction(instruction_action)
+        self.help_menu.addAction(step_config_action)
+        self.help_menu.addAction(about_action)
+
+        self.setLayout(self.main_layout)
         self.main_layout.addLayout(self.columns_layout)
 
         # Левый столбец - прошивка
@@ -117,7 +164,7 @@ class MainWindow(QWidget):
         self.button_configure.clicked.connect(self.start_all_config_clicked)
         self.right_column_layout.addWidget(self.button_configure)
 
-        self.right_column_layout.addWidget(self.checkbox_shutdown)
+        # self.right_column_layout.addWidget(self.checkbox_shutdown)
 
         self.button_shutdown.clicked.connect(self.shutdown_devices)
         self.right_column_layout.addWidget(self.button_shutdown)
@@ -130,7 +177,7 @@ class MainWindow(QWidget):
 
         self.show()
 
-        self.show_file_dialog()
+        # self.show_file_dialog()
         # self.show_step_config()
 
     def show_file_dialog(self):
@@ -144,6 +191,35 @@ class MainWindow(QWidget):
         self.step_config_window = StepConfigWindow(self, self.online_device)
         self.step_config_window.setWindowModality(Qt.ApplicationModal)
         self.step_config_window.show()
+
+    def create_text_dialog(self, title, text_file, size=(800, 400)):
+        dialog = QDialog(self)
+        dialog.setWindowTitle(title)
+        dialog.setFixedSize(*size)
+        dialog.setWindowFlags(dialog.windowFlags() & ~Qt.WindowContextHelpButtonHint)
+
+        layout = QVBoxLayout()
+        text_edit = QTextEdit()
+        text_edit.setReadOnly(True)
+        text_edit.setPlainText(self.load_text(f'texts/{text_file}'))
+        layout.addWidget(text_edit)
+
+        close_button = QPushButton('Закрыть')
+        close_button.clicked.connect(dialog.close)
+        layout.addWidget(close_button)
+
+        dialog.setLayout(layout)
+        return dialog
+
+    def show_about_dialog(self):
+        size = (400, 200)
+        self.create_text_dialog('О программе', 'about.txt', size).exec_()
+
+    def show_instruction_dialog(self):
+        self.create_text_dialog('Инструкция', 'instruction.txt').exec_()
+
+    def show_step_config_dialog(self):
+        self.create_text_dialog('Настройка по шагам', 'step_config.txt').exec_()
 
     @staticmethod
     def update_count(label, buttons=(), count=0, text_template=''):
@@ -193,3 +269,22 @@ class MainWindow(QWidget):
         self.thread = DeviceThread(self, settings_6, self.online_device)
         buttons_to_disable = [self.button_configure, self.button_shutdown, self.button_step_config]
         self.thread.start_execution(buttons_to_disable)
+
+    def load_text(self, file_path):
+        try:
+            file_path = self.resource_path(file_path)
+            with open(file_path, 'r', encoding='utf-8') as file:
+                return file.read()
+        except FileNotFoundError:
+            return f'Файл не найден: {file_path}. Проверьте наличие файла.'
+        except Exception as e:
+            return f'Ошибка при загрузке файла {file_path}: {e}'
+
+    @staticmethod
+    def resource_path(relative_path):
+        """Получает путь к файлу в папке, созданной PyInstaller."""
+        if getattr(sys, 'frozen', False):  # Если работает как .exe
+            base_path = sys._MEIPASS
+        else:  # Если работает как скрипт
+            base_path = os.path.abspath(".")
+        return os.path.join(base_path, relative_path)

@@ -1,31 +1,29 @@
 import subprocess
 import time
-
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
 def get_version():
-    return 'v0.8.3.12'
+    return 'v0.8.7.14'
 
-
-# Полный путь к adb.exe
-# adb_path = 'C:\\ADB\\adb.exe'
-adb_path = '/ADB\\adb.exe'
 
 # Корень устройства
 root_path = '/storage/emulated/0/'
 
+# Путь к adb.exe
+adb_path = '/adb/adb.exe'
+
 # Путь к прошивке
-zip_path = 'C:\\ADB\\Settings_U2\\Firmware\\SQ46M_EN_YDE_WE__SS__R01_U_231225_01_rel.zip'
+zip_path = 'C:/ADB/Settings_U2/Firmware/SQ46M_EN_YDE_WE__SS__R01_U_231225_01_rel.zip'
 
 # Путь до APK которые надо устанавливать
-launcher_apk_path = 'C:\\ADB\\Settings_U2\\APK\\RSLauncher3_105.apk'
-voiceman_apk_path = 'C:\\ADB\\Settings_U2\\APK\\voiceman_2.23.21_rlm.apk'
+launcher_apk_path = 'C:/ADB/Settings_U2/APK/RSLauncher3_105.apk'
+voiceman_apk_path = 'C:/ADB/Settings_U2/APK/voiceman_2.23.21_rlm.apk'
 
 # Путь до файлов которые надо копировать
-keys_config_path = 'C:\\ADB\\Settings_U2\\Files_to_import\\keys_config.txt'
-settings_zip_path = 'C:\\ADB\\Settings_U2\\Files_to_import\\settings.zip'
-wallpaper_path = 'C:\\ADB\\Settings_U2\\Files_to_import\\Wallpaper_Urovo.png'
+keys_config_path = 'C:/ADB/Settings_U2/Files_to_import/keys_config.txt'
+settings_zip_path = 'C:/ADB/Settings_U2/Files_to_import/settings.zip'
+wallpaper_path = 'C:/ADB/Settings_U2/Files_to_import/Wallpaper_Urovo.png'
 
 
 def sleep_in_milliseconds(milliseconds):
