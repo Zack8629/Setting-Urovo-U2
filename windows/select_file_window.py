@@ -1,143 +1,114 @@
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLineEdit, QHBoxLayout, QPushButton, QFileDialog, QGroupBox
+import json
+import os
 
-from scripts import get_version
+from PyQt5.QtWidgets import (
+    QWidget, QVBoxLayout, QLineEdit, QHBoxLayout, QPushButton,
+    QFileDialog, QGroupBox
+)
 
 
 class FileDialogWindow(QWidget):
+    CONFIG_FILE = 'select_file.txt'
+    DEFAULT_PATHS = {
+        'firmware': '',
+        'launcher': '',
+        'voiceman': '',
+        'button_settings': '',
+        'launcher_settings': '',
+        'wallpaper': ''
+    }
+
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle(f'Выбор файлов {get_version()}')
+        self.setWindowTitle('Выбор файлов')
 
-        # Используем для сохранения путей
-        self.saved_file_paths = {
-            # 'adb': '',
-            'firmware': '',
-            'launcher': '',
-            'voiceman': '',
-            'button_settings': '',
-            'launcher_settings': '',
-            'wallpaper': ''
-        }
-
-        # Используем для текущих путей
-        self.current_file_paths = {
-            # 'adb': '',
-            'firmware': '',
-            'launcher': '',
-            'voiceman': '',
-            'button_settings': '',
-            'launcher_settings': '',
-            'wallpaper': ''
-        }
-
+        self.paths = {}
+        self.text_fields = {}  # Словарь для хранения QLineEdit с их ключами
         self.init_ui()
 
     def init_ui(self):
-        self.layout = QVBoxLayout()
-        self.setLayout(self.layout)
+        layout = QVBoxLayout(self)
 
-        # Добавляем виджеты QLineEdit из self.current_file_paths в макет
-        # self.add_file_selector('Указать файл ADB', 'adb', 'exe')
-
-        self.add_file_selector('Указать файл прошивки', 'firmware', 'zip')
-
-        self.layout.addSpacing(20)
+        self.add_file_selector(layout, 'Указать файл прошивки', 'firmware', 'zip')
+        layout.addSpacing(20)
 
         group_box = QGroupBox('Файлы для настройки')
-        group_layout = QVBoxLayout()
-        group_box.setAlignment(Qt.AlignCenter)
-        group_layout.setContentsMargins(10, 10, 10, 10)
+        group_layout = QVBoxLayout(group_box)
 
-        self.add_file_selector('Указать APK лаунчера', 'launcher', 'apk', group_layout)
+        file_selectors = [
+            ('Указать APK лаунчера', 'launcher', 'apk'),
+            ('Указать APK voiceman', 'voiceman', 'apk'),
+            ('Указать настройки кнопок', 'button_settings', 'txt'),
+            ('Указать настройки лаунчера', 'launcher_settings', 'zip'),
+            ('Указать фоновое изображение', 'wallpaper', 'png')
+        ]
 
-        self.add_file_selector('Указать APK voiceman', 'voiceman', 'apk', group_layout)
+        for label, key, file_type in file_selectors:
+            self.add_file_selector(group_layout, label, key, file_type)
 
-        self.add_file_selector('Указать настройки кнопок', 'button_settings', 'txt', group_layout)
+        layout.addWidget(group_box)
+        self.add_buttons(layout)
 
-        self.add_file_selector('Указать настройки лаунчера', 'launcher_settings', 'zip', group_layout)
-
-        self.add_file_selector('Указать фоновое изображение', 'wallpaper', 'png', group_layout)
-
-        group_box.setLayout(group_layout)
-        self.layout.addWidget(group_box)
-
-        self.add_buttons()
-
-    def add_file_selector(self, button_name, key, file_type, layout=None):
-        if layout is None:
-            layout = self.layout
-
+    def add_file_selector(self, layout, label, key, file_type):
         hbox = QHBoxLayout()
-
-        button_width = 170
-        button_height = 30
-
-        button = QPushButton(button_name)
-        button.setFixedSize(button_width, button_height)
-
+        button = QPushButton(label)
+        button.setFixedSize(321, 40)
         line_edit = QLineEdit()
         line_edit.setReadOnly(True)
-        hbox.addWidget(button)
-        hbox.addWidget(line_edit)
 
         button.clicked.connect(lambda: self.open_file_dialog(line_edit, key, file_type))
-
+        hbox.addWidget(button)
+        hbox.addWidget(line_edit)
         layout.addLayout(hbox)
 
+        self.text_fields[key] = line_edit  # Сохраняем QLineEdit с ключом
+
+    def showEvent(self, event):
+        # Загружаем пути перед показом окна
+        self.paths = self.load_paths()
+        for key, line_edit in self.text_fields.items():
+            line_edit.setText(self.paths.get(key, ''))
+        super().showEvent(event)
+
     def open_file_dialog(self, line_edit, key, file_type):
-        try:
-            options = QFileDialog.Options()
-            options |= QFileDialog.DontUseNativeDialog
-            file_types = f'{file_type.capitalize()} Files (*.{file_type});;All Files (*)'
-            file_name, _ = QFileDialog.getOpenFileName(self, 'Выбрать файл', '', file_types, options=options)
-            print(f'!!! => {line_edit=}')
-            if file_name:
-                line_edit.setText(file_name)
-                self.current_file_paths[key] = file_name
-        except Exception as err:
-            print(f'Ошибка диалогового окна! => {err}')
+        file_name, _ = QFileDialog.getOpenFileName(
+            self, 'Выбрать файл', '', f'{file_type.upper()} Files (*.{file_type});;All Files (*)'
+        )
+        if file_name:
+            line_edit.setText(file_name)
+            self.paths[key] = file_name
 
-    def add_buttons(self):
+    def add_buttons(self, layout):
         hbox = QHBoxLayout()
-
         save_button = QPushButton('Сохранить')
-        save_button.clicked.connect(self.accept)
+        save_button.clicked.connect(self.save_paths)
         hbox.addWidget(save_button)
 
         cancel_button = QPushButton('Отмена')
-        cancel_button.clicked.connect(self.reject)
+        cancel_button.clicked.connect(self.close_without_saving)
         hbox.addWidget(cancel_button)
 
-        self.layout.addLayout(hbox)
+        layout.addLayout(hbox)
 
-    def accept(self):
-        # Обновляем saved_file_paths только при сохранении
-        for key, file_path in self.current_file_paths.items():
-            self.saved_file_paths[key] = file_path
-
-        print('Файлы сохранены:')
-        for key, file_path in self.saved_file_paths.items():
-            print(f'{key}: {file_path}')
-
-        print()
+    def save_paths(self):
+        try:
+            with open(self.CONFIG_FILE, 'w') as file:
+                json.dump(self.paths, file, indent=4, ensure_ascii=False)
+            print('Изменения сохранены.')
+        except Exception as e:
+            print(f'Ошибка сохранения файла: {e}')
         self.close()
 
-    def reject(self):
-        print('Отменено')
-        for key, file_path in self.saved_file_paths.items():
-            self.current_file_paths[key] = file_path
-
-        print(f'{self.saved_file_paths=}')
-        print(f'{self.current_file_paths=}')
-        print()
+    def close_without_saving(self):
+        self.paths = self.load_paths()
+        print('Изменения отменены.')
         self.close()
 
-    def load_saved_paths(self):
-        for key, file_path in self.saved_file_paths.items():
-            self.current_file_paths[key] = file_path
-
-        print('load_saved_paths')
-        print(f'{self.saved_file_paths=}')
-        print(f'{self.current_file_paths=}')
-        print()
+    def load_paths(self):
+        if os.path.exists(self.CONFIG_FILE):
+            try:
+                with open(self.CONFIG_FILE, 'r') as file:
+                    return json.load(file)
+            except Exception as e:
+                print(f'Ошибка загрузки файла: {e}')
+        return self.DEFAULT_PATHS.copy()

@@ -1,5 +1,7 @@
 from scripts import run_adb_command, adb_path
 
+test_run = True
+
 
 def check_devices():
     try:
@@ -29,7 +31,8 @@ def check_devices():
                 else:
                     other_device.append(device_id)
 
-        # add_all_test_devics(sideload_device, online_device, other_device)
+        if test_run:
+            add_all_test_devics(sideload_device, online_device, other_device)
 
         output = {
             'sideload_device': sideload_device,

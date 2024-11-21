@@ -1,0 +1,8 @@
+{
+    "firmware": "",
+    "launcher": "",
+    "voiceman": "",
+    "button_settings": "",
+    "launcher_settings": "",
+    "wallpaper": ""
+}

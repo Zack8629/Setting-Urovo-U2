@@ -184,7 +184,6 @@ class MainWindow(QWidget):
         if not self.file_dialog:
             self.file_dialog = FileDialogWindow()
             self.file_dialog.setWindowModality(Qt.ApplicationModal)
-        # self.file_dialog.load_saved_paths()
         self.file_dialog.show()
 
     def show_step_config(self):
