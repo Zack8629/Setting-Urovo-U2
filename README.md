@@ -44,11 +44,21 @@
 
 ## Системные требования
 - **Операционная система**: Windows 10/11.
-
+- **Оперативная память**: Соответствует минимальным требованиям Windows 10/11.
 ---
 
 ## Сборка приложения
-Для создания исполняемого файла используйте следующую команду:
+Для создания исполняемого файла:
+- Установите зависимости:
 
 ```bash
-pyinstaller --onefile --icon=icons/main.ico --name="Flash and Settings U2 vX.X.X.X" --add-data "texts;texts" --add-data "icons;icons" run.py
+pip install -r requirements.txt
+```
+
+- Запустите скрипт сборки:
+
+```bash
+python build_exe.py
+```
+После завершения сборки файл .exe будет находиться в папке dist.
+Пример имени файла: **Flash and Settings U2 v1.0.0.exe**

@@ -1,22 +1,21 @@
-import json
-import os
-
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QLineEdit, QHBoxLayout, QPushButton,
     QFileDialog, QGroupBox
 )
 
+from scripts.paths import CONFIG_FILE, DEFAULT_PATHS, get_empty_paths
+from utils.utils import write_json_file, read_json_file
+
 
 class FileDialogWindow(QWidget):
-    CONFIG_FILE = 'select_file.txt'
-    DEFAULT_PATHS = {
-        'firmware': '',
-        'launcher': '',
-        'voiceman': '',
-        'button_settings': '',
-        'launcher_settings': '',
-        'wallpaper': ''
-    }
+    FILE_SELECTORS = [
+        ('Указать файл прошивки', 'firmware', 'zip'),
+        ('Указать APK лаунчера', 'launcher', 'apk'),
+        ('Указать APK voiceman', 'voiceman', 'apk'),
+        ('Указать настройки кнопок', 'button_settings', 'txt'),
+        ('Указать настройки лаунчера', 'launcher_settings', 'zip'),
+        ('Указать фоновое изображение', 'wallpaper', 'png')
+    ]
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -29,30 +28,23 @@ class FileDialogWindow(QWidget):
     def init_ui(self):
         layout = QVBoxLayout(self)
 
-        self.add_file_selector(layout, 'Указать файл прошивки', 'firmware', 'zip')
+        self.add_file_selector(layout, *self.FILE_SELECTORS[0])
         layout.addSpacing(20)
 
         group_box = QGroupBox('Файлы для настройки')
         group_layout = QVBoxLayout(group_box)
 
-        file_selectors = [
-            ('Указать APK лаунчера', 'launcher', 'apk'),
-            ('Указать APK voiceman', 'voiceman', 'apk'),
-            ('Указать настройки кнопок', 'button_settings', 'txt'),
-            ('Указать настройки лаунчера', 'launcher_settings', 'zip'),
-            ('Указать фоновое изображение', 'wallpaper', 'png')
-        ]
-
-        for label, key, file_type in file_selectors:
+        for label, key, file_type in self.FILE_SELECTORS[1:]:
             self.add_file_selector(group_layout, label, key, file_type)
 
         layout.addWidget(group_box)
+
         self.add_buttons(layout)
 
     def add_file_selector(self, layout, label, key, file_type):
         hbox = QHBoxLayout()
         button = QPushButton(label)
-        button.setFixedSize(321, 40)
+        button.setFixedSize(210, 21)
         line_edit = QLineEdit()
         line_edit.setReadOnly(True)
 
@@ -65,18 +57,24 @@ class FileDialogWindow(QWidget):
 
     def showEvent(self, event):
         # Загружаем пути перед показом окна
-        self.paths = self.load_paths()
-        for key, line_edit in self.text_fields.items():
-            line_edit.setText(self.paths.get(key, ''))
-        super().showEvent(event)
+        try:
+            self.paths = read_json_file(CONFIG_FILE, get_empty_paths(DEFAULT_PATHS))
+            for key, line_edit in self.text_fields.items():
+                line_edit.setText(self.paths.get(key, ''))
+            super().showEvent(event)
+        except Exception as e:
+            print(f'Ошибка отображения окна => {e}')
 
     def open_file_dialog(self, line_edit, key, file_type):
-        file_name, _ = QFileDialog.getOpenFileName(
-            self, 'Выбрать файл', '', f'{file_type.upper()} Files (*.{file_type});;All Files (*)'
-        )
-        if file_name:
-            line_edit.setText(file_name)
-            self.paths[key] = file_name
+        try:
+            file_name, _ = QFileDialog.getOpenFileName(
+                self, 'Выбрать файл', '', f'{file_type.upper()} Files (*.{file_type});;All Files (*)'
+            )
+            if file_name:
+                line_edit.setText(file_name)
+                self.paths[key] = file_name
+        except Exception as e:
+            print(f'Ошибка при выборе файла: {e}')
 
     def add_buttons(self, layout):
         hbox = QHBoxLayout()
@@ -91,24 +89,11 @@ class FileDialogWindow(QWidget):
         layout.addLayout(hbox)
 
     def save_paths(self):
-        try:
-            with open(self.CONFIG_FILE, 'w') as file:
-                json.dump(self.paths, file, indent=4, ensure_ascii=False)
-            print('Изменения сохранены.')
-        except Exception as e:
-            print(f'Ошибка сохранения файла: {e}')
+        write_json_file(CONFIG_FILE, self.paths)
+        print('Изменения сохранены.')
         self.close()
 
     def close_without_saving(self):
-        self.paths = self.load_paths()
+        self.paths = read_json_file(CONFIG_FILE, DEFAULT_PATHS)
         print('Изменения отменены.')
         self.close()
-
-    def load_paths(self):
-        if os.path.exists(self.CONFIG_FILE):
-            try:
-                with open(self.CONFIG_FILE, 'r') as file:
-                    return json.load(file)
-            except Exception as e:
-                print(f'Ошибка загрузки файла: {e}')
-        return self.DEFAULT_PATHS.copy()

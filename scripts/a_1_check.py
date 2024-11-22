@@ -1,6 +1,7 @@
-from scripts import run_adb_command, adb_path
+from scripts import run_adb_command
+from scripts.paths import adb_path
 
-test_run = True
+test_run = False
 
 
 def check_devices():

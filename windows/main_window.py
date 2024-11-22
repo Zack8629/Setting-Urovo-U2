@@ -1,17 +1,17 @@
-import os
-import sys
-
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QTextEdit, QPushButton, QCheckBox, QProgressBar, \
-    QMenuBar, QAction, QMessageBox, QDialog
+from PyQt5.QtGui import QIcon, QFont
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QTextEdit, QPushButton, QProgressBar, \
+    QMenuBar, QAction, QDialog
 
 from scripts import get_version
 from scripts.a_1_check import check_devices
 from scripts.a_2_flash import flash_devices
 from scripts.a_3_0_all_configure_u2 import start_all_config, settings_6
+from scripts.paths import instruction_text, step_config_text, about_text
+from utils.utils import resource_path, load_text
 from .select_file_window import FileDialogWindow
 from .settings_step_by_step_window import StepConfigWindow
+from .settings_window import SettingsWindow
 from .threads import DeviceThread
 
 
@@ -25,7 +25,7 @@ class MainWindow(QWidget):
         self.other_device = []
 
         # Устанавливаем иконку для окна
-        self.setWindowIcon(QIcon(self.resource_path('icons/main.ico')))
+        self.setWindowIcon(QIcon(resource_path('icons/main.ico')))
 
         # Основные компоненты интерфейса
         self.main_layout = QVBoxLayout()
@@ -55,7 +55,7 @@ class MainWindow(QWidget):
         self.button_step_config.setEnabled(False)
 
         self.button_select_files = QPushButton('Указать файлы')
-        # self.button_select_files.setEnabled(False)
+        self.button_select_files.setEnabled(False)
 
         # Правый столбец - настройка
         self.right_column_layout = QVBoxLayout()
@@ -82,19 +82,23 @@ class MainWindow(QWidget):
         self.main_layout.setMenuBar(self.menu_bar)
 
         # Создание действий для меню 'Файл'
+        settings_window = QAction('Настройки', self)
+        settings_window.triggered.connect(self.show_settings_window)
+        settings_window.setEnabled(False)
+
         open_action = QAction('Указать файлы', self)
         open_action.triggered.connect(self.show_file_dialog)
+        open_action.setEnabled(False)
 
         shutdown_checkbox_action = QAction('Выключить после настройки', self)
         shutdown_checkbox_action.setCheckable(True)
         shutdown_checkbox_action.setChecked(False)
-        # shutdown_checkbox_action.triggered.connect(
-        #     lambda state: self.checkbox_shutdown.setChecked(state)
-        # )
+        shutdown_checkbox_action.setEnabled(False)
 
         exit_action = QAction('Выход', self)
         exit_action.triggered.connect(self.close)
 
+        self.file_menu.addAction(settings_window)
         self.file_menu.addAction(open_action)
         self.file_menu.addAction(shutdown_checkbox_action)
         self.file_menu.addAction(exit_action)
@@ -191,7 +195,15 @@ class MainWindow(QWidget):
         self.step_config_window.setWindowModality(Qt.ApplicationModal)
         self.step_config_window.show()
 
-    def create_text_dialog(self, title, text_file, size=(800, 400)):
+    def create_text_dialog(self, title, text, size=(800, 400), font_size=12):
+        """
+          Создаёт диалоговое окно с текстом.
+
+          :param title: Заголовок окна.
+          :param text: Отображаемый текст.
+          :param size: Размер окна (ширина, высота).
+          :param font_size: Размер шрифта текста.
+          """
         dialog = QDialog(self)
         dialog.setWindowTitle(title)
         dialog.setFixedSize(*size)
@@ -200,8 +212,13 @@ class MainWindow(QWidget):
         layout = QVBoxLayout()
         text_edit = QTextEdit()
         text_edit.setReadOnly(True)
-        text_edit.setPlainText(self.load_text(f'texts/{text_file}'))
+        text_edit.setPlainText(text)
         layout.addWidget(text_edit)
+
+        # Настройка шрифта
+        font = QFont()
+        font.setPointSize(font_size)  # Установка размера шрифта
+        text_edit.setFont(font)
 
         close_button = QPushButton('Закрыть')
         close_button.clicked.connect(dialog.close)
@@ -210,15 +227,19 @@ class MainWindow(QWidget):
         dialog.setLayout(layout)
         return dialog
 
-    def show_about_dialog(self):
-        size = (400, 200)
-        self.create_text_dialog('О программе', 'about.txt', size).exec_()
-
     def show_instruction_dialog(self):
-        self.create_text_dialog('Инструкция', 'instruction.txt').exec_()
+        text = load_text(instruction_text)
+        self.create_text_dialog('Инструкция', text).exec_()
 
     def show_step_config_dialog(self):
-        self.create_text_dialog('Настройка по шагам', 'step_config.txt').exec_()
+        text = load_text(step_config_text)
+        self.create_text_dialog('Настройка по шагам', text).exec_()
+
+    def show_about_dialog(self):
+        size = (400, 200)
+        text = load_text(about_text)
+        text = text.replace('get_version()', get_version())
+        self.create_text_dialog('О программе', text, size).exec_()
 
     @staticmethod
     def update_count(label, buttons=(), count=0, text_template=''):
@@ -269,21 +290,6 @@ class MainWindow(QWidget):
         buttons_to_disable = [self.button_configure, self.button_shutdown, self.button_step_config]
         self.thread.start_execution(buttons_to_disable)
 
-    def load_text(self, file_path):
-        try:
-            file_path = self.resource_path(file_path)
-            with open(file_path, 'r', encoding='utf-8') as file:
-                return file.read()
-        except FileNotFoundError:
-            return f'Файл не найден: {file_path}. Проверьте наличие файла.'
-        except Exception as e:
-            return f'Ошибка при загрузке файла {file_path}: {e}'
-
-    @staticmethod
-    def resource_path(relative_path):
-        """Получает путь к файлу в папке, созданной PyInstaller."""
-        if getattr(sys, 'frozen', False):  # Если работает как .exe
-            base_path = sys._MEIPASS
-        else:  # Если работает как скрипт
-            base_path = os.path.abspath(".")
-        return os.path.join(base_path, relative_path)
+    def show_settings_window(self):
+        self.settings_window = SettingsWindow()
+        self.settings_window.show()

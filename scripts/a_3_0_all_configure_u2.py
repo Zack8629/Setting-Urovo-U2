@@ -1,8 +1,9 @@
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from scripts import run_adb_command, adb_path, launcher_apk_path, voiceman_apk_path, \
-    root_path, wallpaper_path, keys_config_path, settings_zip_path, invoke_tap, press_home, invoke_swipe, \
+from scripts import run_adb_command, invoke_tap, press_home, invoke_swipe, \
     run_configuration_for_devices
+from scripts.paths import adb_path, launcher_apk_path, voiceman_apk_path, wallpaper_path, root_path, keys_config_path, \
+    settings_zip_path
 
 
 def install_apk(device_id, apk):

@@ -1,6 +1,7 @@
 from concurrent.futures import ThreadPoolExecutor
 
-from scripts import adb_path, zip_path, run_adb_command
+from scripts import run_adb_command
+from scripts.paths import adb_path, zip_path
 
 
 def flash_devices(sideload_devices):
