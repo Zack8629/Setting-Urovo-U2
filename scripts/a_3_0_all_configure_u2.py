@@ -2,8 +2,8 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from scripts import run_adb_command, invoke_tap, press_home, invoke_swipe, \
     run_configuration_for_devices
-from scripts.paths import adb_path, launcher_apk_path, voiceman_apk_path, wallpaper_path, root_path, keys_config_path, \
-    settings_zip_path
+from scripts.paths import adb_path, root_path, CONFIG_FILE, EMPTY_PATH
+from utils.utils import read_json_file
 
 
 def install_apk(device_id, apk):
@@ -26,12 +26,13 @@ def run_in_parallel(commands):
 
 
 def settings_1(device_id):
+    paths = read_json_file(CONFIG_FILE, EMPTY_PATH)
     commands = [
-        lambda: install_apk(device_id, launcher_apk_path),
-        lambda: install_apk(device_id, voiceman_apk_path),
-        lambda: copy_file(device_id, wallpaper_path, f'{root_path}/Download'),
-        lambda: copy_file(device_id, keys_config_path, root_path),
-        lambda: copy_file(device_id, settings_zip_path, root_path),
+        lambda: install_apk(device_id, paths['launcher']),
+        lambda: install_apk(device_id, paths['voiceman']),
+        lambda: copy_file(device_id, paths['wallpaper'], f'{root_path}/Download'),
+        lambda: copy_file(device_id, paths['button_settings'], root_path),
+        lambda: copy_file(device_id, paths['launcher_settings'], root_path),
         lambda: shell_command(device_id, 'settings put secure ui_night_mode 2'),
         lambda: shell_command(device_id, 'settings put system status_bar_show_battery_percent 1'),
         lambda: shell_command(device_id, 'settings put system screen_brightness 60'),

@@ -1,21 +1,19 @@
+from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QPushButton, QApplication
 
-from scripts import get_version, run_configuration_for_devices
+from scripts import run_configuration_for_devices
 from scripts.a_3_0_all_configure_u2 import settings_1, settings_2, settings_3, settings_4, settings_5
+from utils.utils import resource_path
 
 
 class StepConfigWindow(QWidget):
     def __init__(self, main_window, online_devices):
         super().__init__()
+        self.buttons = {}
         self.main_window = main_window
+        self.setWindowTitle('Настройка по шагам')
+        self.setWindowIcon(QIcon(resource_path('icons/main.ico')))
         self.online_devices = online_devices
-        self.init_ui()
-
-    def init_ui(self):
-        self.setWindowTitle(f'Настройка по шагам {get_version()}')
-        layout = QVBoxLayout()
-
-        # Словарь для соответствия кнопок и функций
         self.config_functions = {
             'Настройка 1': settings_1,
             'Настройка 2': settings_2,
@@ -24,8 +22,10 @@ class StepConfigWindow(QWidget):
             'Настройка 5': settings_5,
         }
 
-        # Сохраняем ссылки на кнопки для их активации/деактивации
-        self.buttons = {}
+        self.init_ui()
+
+    def init_ui(self):
+        layout = QVBoxLayout()
 
         # Добавляем кнопки для шагов настройки
         for label, func in self.config_functions.items():

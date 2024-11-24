@@ -4,9 +4,15 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from scripts.paths import adb_path
 
+test_run = False
+
 
 def get_version():
-    return 'v0.8.8.16'
+    version = 'v0.9.8.23'
+    if test_run:
+        return f'{version} TEST RUN!'
+
+    return version
 
 
 def sleep_in_milliseconds(milliseconds):

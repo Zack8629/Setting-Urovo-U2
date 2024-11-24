@@ -1,7 +1,5 @@
-from scripts import run_adb_command
+from scripts import run_adb_command, test_run
 from scripts.paths import adb_path
-
-test_run = False
 
 
 def check_devices():
@@ -11,8 +9,8 @@ def check_devices():
 
         # Парсинг вывода для извлечения идентификаторов устройств и их статусов
         sideload_device = []
-        online_device = []
         other_device = []
+        online_device = []
 
         lines = result.splitlines()
         for line in lines:
@@ -37,8 +35,8 @@ def check_devices():
 
         output = {
             'sideload_device': sideload_device,
+            'other_device': other_device,
             'online_device': online_device,
-            'other_device': other_device
         }
 
         print(output)

@@ -1,25 +1,31 @@
+from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QLineEdit, QHBoxLayout, QPushButton,
     QFileDialog, QGroupBox
 )
 
-from scripts.paths import CONFIG_FILE, DEFAULT_PATHS, get_empty_paths
-from utils.utils import write_json_file, read_json_file
+from scripts.paths import CONFIG_FILE, DEFAULT_PATHS, DEFAULT_KEYS_AND_EXTENSIONS, EMPTY_PATH
+from utils.utils import write_json_file, read_json_file, resource_path
 
 
 class FileDialogWindow(QWidget):
-    FILE_SELECTORS = [
-        ('Указать файл прошивки', 'firmware', 'zip'),
-        ('Указать APK лаунчера', 'launcher', 'apk'),
-        ('Указать APK voiceman', 'voiceman', 'apk'),
-        ('Указать настройки кнопок', 'button_settings', 'txt'),
-        ('Указать настройки лаунчера', 'launcher_settings', 'zip'),
-        ('Указать фоновое изображение', 'wallpaper', 'png')
-    ]
+    LABELS_MAP = {
+        'firmware': 'Указать файл прошивки',
+        'launcher': 'Указать APK лаунчера',
+        'voiceman': 'Указать APK voiceman',
+        'button_settings': 'Указать настройки кнопок',
+        'launcher_settings': 'Указать настройки лаунчера',
+        'wallpaper': 'Указать фоновое изображение',
+    }
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle('Выбор файлов')
+        self.setWindowIcon(QIcon(resource_path('icons/main.ico')))
+
+        self.FILE_SELECTORS = [
+            (self.LABELS_MAP[key], key, ext) for key, ext in DEFAULT_KEYS_AND_EXTENSIONS.items()
+        ]
 
         self.paths = {}
         self.text_fields = {}  # Словарь для хранения QLineEdit с их ключами
@@ -44,7 +50,7 @@ class FileDialogWindow(QWidget):
     def add_file_selector(self, layout, label, key, file_type):
         hbox = QHBoxLayout()
         button = QPushButton(label)
-        button.setFixedSize(210, 21)
+        button.setFixedSize(321, 35)
         line_edit = QLineEdit()
         line_edit.setReadOnly(True)
 
@@ -58,7 +64,7 @@ class FileDialogWindow(QWidget):
     def showEvent(self, event):
         # Загружаем пути перед показом окна
         try:
-            self.paths = read_json_file(CONFIG_FILE, get_empty_paths(DEFAULT_PATHS))
+            self.paths = read_json_file(CONFIG_FILE, EMPTY_PATH)
             for key, line_edit in self.text_fields.items():
                 line_edit.setText(self.paths.get(key, ''))
             super().showEvent(event)

@@ -29,6 +29,7 @@ class DeviceThread(QThread):
             print(f'FAIL RUN => {err}')
 
     def start_execution(self, buttons_to_disable, check_shutdown=False):
+        buttons_to_disable = list(set(buttons_to_disable))
         for button in buttons_to_disable:
             button.setEnabled(False)
 
@@ -37,9 +38,15 @@ class DeviceThread(QThread):
         self.start()
 
     def on_finished(self, buttons_to_enable, check_shutdown):
-        for button in buttons_to_enable:
-            button.setEnabled(True)
+        try:
+            for button in buttons_to_enable:
+                button.setEnabled(True)
+        except Exception as e:
+            print(f'Fail button.setEnabled(True) => {e}')
 
-        if check_shutdown and self.main_window.checkbox_shutdown.isChecked():
-            time.sleep(5)
-            self.main_window.shutdown_devices()
+        try:
+            if check_shutdown and self.main_window.checkbox_shutdown_menu.isChecked():
+                time.sleep(5)
+                self.main_window.shutdown_devices()
+        except Exception as e:
+            print(f'FAIL check_shutdown => {e}')
