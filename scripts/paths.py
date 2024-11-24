@@ -2,7 +2,7 @@ from utils.utils import resource_path
 
 settings_U2 = False
 
-CONFIG_FILE = 'specified_files.txt'
+CONFIG_FILE = 'specified_files.json'
 
 BASE_PATH = 'settings_U2/' if settings_U2 else ''
 
