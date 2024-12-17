@@ -1,7 +1,7 @@
 import os
 import time
 
-from scripts import get_version
+from utils import get_version
 
 version = get_version()
 

@@ -3,13 +3,12 @@ import traceback
 
 from PyQt5.QtWidgets import QApplication
 
-from scripts.paths import CONFIG_FILE, DEFAULT_PATHS
-from utils.utils import ensure_config_file_exists
+from utils.working_with_files import ensure_config_file_exists
 from windows.main_window import MainWindow
 
 if __name__ == '__main__':
     try:
-        ensure_config_file_exists(CONFIG_FILE, DEFAULT_PATHS)
+        ensure_config_file_exists()
 
         app = QApplication(sys.argv)
         window = MainWindow()

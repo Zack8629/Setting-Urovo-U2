@@ -1,11 +1,10 @@
-from scripts import run_adb_command, test_run
-from scripts.paths import adb_path
+from utils import run_adb_command, ADB_PATH, test_run
 
 
 def check_devices():
     try:
         # Получение списка всех подключенных устройств
-        result = run_adb_command(f'{adb_path} devices')
+        result = run_adb_command(f'{ADB_PATH} devices')
 
         # Парсинг вывода для извлечения идентификаторов устройств и их статусов
         sideload_device = []

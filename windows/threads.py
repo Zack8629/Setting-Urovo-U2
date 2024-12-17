@@ -7,16 +7,17 @@ class DeviceThread(QThread):
     finished = pyqtSignal()
     result_ready = pyqtSignal(dict)
 
-    def __init__(self, main_window, func, devices=None):
+    def __init__(self, main_window, func, devices=None, paths=None):
         super().__init__()
         self.main_window = main_window
         self.func = func
         self.devices = devices
+        self.paths = paths
 
     def run(self):
         try:
             if self.devices:
-                result = self.func(self.devices)
+                result = self.func(self.devices, self.paths)
             else:
                 result = self.func()
 

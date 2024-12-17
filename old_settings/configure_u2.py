@@ -1,21 +1,20 @@
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from scripts import run_adb_command, invoke_tap, press_home, invoke_swipe, \
-    run_configuration_for_devices
-from scripts.paths import adb_path, root_path, CONFIG_FILE, EMPTY_PATH
-from utils.utils import read_json_file
+from utils import run_adb_command, invoke_tap, press_home, invoke_swipe, \
+    run_configuration_for_devices, ADB_PATH
+from utils.global_path import DEVICE_ROOT_PATH
 
 
 def install_apk(device_id, apk):
-    run_adb_command(f'{adb_path} -s {device_id} install "{apk}"')
+    run_adb_command(f'{ADB_PATH} -s {device_id} install "{apk}"')
 
 
 def copy_file(device_id, file, path):
-    run_adb_command(f'{adb_path} -s {device_id} push "{file}" {path}')
+    run_adb_command(f'{ADB_PATH} -s {device_id} push "{file}" {path}')
 
 
 def shell_command(device_id, command):
-    run_adb_command(f'{adb_path} -s {device_id} shell {command}')
+    run_adb_command(f'{ADB_PATH} -s {device_id} shell {command}')
 
 
 def run_in_parallel(commands):
@@ -25,21 +24,20 @@ def run_in_parallel(commands):
             future.result()
 
 
-def settings_1(device_id):
-    paths = read_json_file(CONFIG_FILE, EMPTY_PATH)
+def settings_1(device_id, paths):
     commands = [
         lambda: install_apk(device_id, paths['launcher']),
         lambda: install_apk(device_id, paths['voiceman']),
-        lambda: copy_file(device_id, paths['wallpaper'], f'{root_path}/Download'),
-        lambda: copy_file(device_id, paths['button_settings'], root_path),
-        lambda: copy_file(device_id, paths['launcher_settings'], root_path),
+        lambda: copy_file(device_id, paths['wallpaper'], f'{DEVICE_ROOT_PATH}/Download'),
+        lambda: copy_file(device_id, paths['button_settings'], DEVICE_ROOT_PATH),
+        lambda: copy_file(device_id, paths['launcher_settings'], DEVICE_ROOT_PATH),
         lambda: shell_command(device_id, 'settings put secure ui_night_mode 2'),
         lambda: shell_command(device_id, 'settings put system status_bar_show_battery_percent 1'),
         lambda: shell_command(device_id, 'settings put system screen_brightness 60'),
         lambda: shell_command(device_id, 'settings put system screen_off_timeout 120000'),
         lambda: shell_command(device_id, 'pm disable-user --user 0 com.google.android.googlequicksearchbox'),
         lambda: shell_command(device_id, 'locksettings set-disabled true'),
-        lambda: invoke_tap(device_id, x=530, y=320, pre_delay=900, post_delay=900)
+        lambda: invoke_tap(device_id, x=530, y=320, pre_delay=900, post_delay=900)  # НАЖАТИЕ 'Начать'
     ]
 
     run_in_parallel(commands)
@@ -62,8 +60,8 @@ def settings_2(device_id):
 def settings_3(device_id):
     # УСТАНОВКА ОБОЕВ
     command = (
-        f'{adb_path} -s {device_id} shell am start -a android.intent.action.ATTACH_DATA '
-        f'-d file://{root_path}/Download/Wallpaper_Urovo.png -t image/png '
+        f'{ADB_PATH} -s {device_id} shell am start -a android.intent.action.ATTACH_DATA '
+        f'-d file://{DEVICE_ROOT_PATH}/Download/Wallpaper_Urovo.png -t image/png '
         f'-e mimeType image/png --grant-read-uri-permission'
     )
     run_adb_command(command)
@@ -83,7 +81,7 @@ def settings_3(device_id):
 
 def settings_4(device_id):
     # ЗАПУСК RemapResultActivity
-    command = f'{adb_path} -s {device_id} shell am start -n com.ubx.keyremap/.component.RemapResultActivity'
+    command = f'{ADB_PATH} -s {device_id} shell am start -n com.ubx.keyremap/.component.RemapResultActivity'
     run_adb_command(command)
 
     # ВЫПОЛНЕНИЕ ИМПОРТА
@@ -150,13 +148,7 @@ def settings_5(device_id):
     invoke_tap(device_id, x=755, y=460, pre_delay=900, post_delay=900)
 
 
-def settings_6(online_device):
-    for device_id in online_device:
-        print(f'Shutdown device {device_id}')
-        run_adb_command(f'{adb_path} -s {device_id} shell reboot -p')
-
-
-def start_all_config(online_devices):
+def start_all_config(online_devices, paths):
     configs = [settings_1, settings_2, settings_3, settings_4, settings_5]
-    run_configuration_for_devices(online_devices, configs)
+    run_configuration_for_devices(online_devices, configs, paths)
     print('All Configure DONE!')

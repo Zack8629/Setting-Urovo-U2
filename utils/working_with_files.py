@@ -1,15 +1,9 @@
 import json
 import os
-import sys
 
-
-def resource_path(relative_path):
-    """Получает путь к файлу в папке, созданной PyInstaller."""
-    if getattr(sys, 'frozen', False):  # Если работает как .exe
-        base_path = sys._MEIPASS
-    else:  # Если работает как скрипт
-        base_path = os.path.abspath(".")
-    return os.path.join(base_path, relative_path)
+from new_settings.paths import PATH_TO_NEW_DEFAULT_SETTINGS
+from old_settings.paths import PATH_TO_OLD_DEFAULT_SETTINGS
+from utils.global_path import resource_path, CONFIG_FILE, DEFAULT_FIRMWARE_PATH
 
 
 def load_text(file_path):
@@ -54,10 +48,15 @@ def write_json_file(file_path, data):
         print(f'Ошибка при записи файла {file_path}: {e}')
 
 
-def ensure_config_file_exists(config_files, default_paths):
+def ensure_config_file_exists():
+    combined_paths = {
+        "firmware": DEFAULT_FIRMWARE_PATH,
+        "old_settings": PATH_TO_OLD_DEFAULT_SETTINGS,
+        "new_settings": PATH_TO_NEW_DEFAULT_SETTINGS
+    }
     """
     Проверяет наличие файла конфигурации и создаёт его с данными по умолчанию, если файла нет.
     """
-    if not os.path.exists(config_files):
-        write_json_file(config_files, default_paths)
-        print(f'Создан файл {config_files} ')
+    if not os.path.exists(CONFIG_FILE):
+        write_json_file(CONFIG_FILE, combined_paths)
+        print(f'Создан файл {CONFIG_FILE} ')

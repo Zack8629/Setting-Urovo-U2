@@ -1,49 +1,37 @@
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import (
-    QWidget, QVBoxLayout, QLineEdit, QHBoxLayout, QPushButton,
-    QFileDialog, QGroupBox
-)
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLineEdit, QHBoxLayout, QPushButton, QFileDialog, QGroupBox
 
-from scripts.paths import CONFIG_FILE, DEFAULT_PATHS, DEFAULT_KEYS_AND_EXTENSIONS, EMPTY_PATH
-from utils.utils import write_json_file, read_json_file, resource_path
+from new_settings.paths import DEFAULT_KEYS_AND_EXTENSIONS_NEW_SETTINGS, EMPTY_PATH_NEW_SETTINGS
+from utils.global_path import resource_path, CONFIG_FILE
+from utils.working_with_files import read_json_file, write_json_file
 
 
-class FileDialogWindow(QWidget):
+class FileDialogWindowNewSetting(QWidget):
     LABELS_MAP = {
-        'firmware': 'Указать файл прошивки',
-        'launcher': 'Указать APK лаунчера',
-        'voiceman': 'Указать APK voiceman',
-        'button_settings': 'Указать настройки кнопок',
-        'launcher_settings': 'Указать настройки лаунчера',
         'wallpaper': 'Указать фоновое изображение',
+        'keys_config': 'Указать настройки кнопок',
+        'settings_property': 'Указать настройки лаунчера',
+        'voiceman_apk': 'Указать APK voiceman',
     }
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle('Выбор файлов')
+        self.setWindowTitle('Выбор файлов для новой настройки')
         self.setWindowIcon(QIcon(resource_path('icons/main.ico')))
 
         self.FILE_SELECTORS = [
-            (self.LABELS_MAP[key], key, ext) for key, ext in DEFAULT_KEYS_AND_EXTENSIONS.items()
+            (self.LABELS_MAP[key], key, ext) for key, ext in DEFAULT_KEYS_AND_EXTENSIONS_NEW_SETTINGS.items()
         ]
 
         self.paths = {}
-        self.text_fields = {}  # Словарь для хранения QLineEdit с их ключами
+        self.text_fields = {}
         self.init_ui()
 
     def init_ui(self):
         layout = QVBoxLayout(self)
 
-        self.add_file_selector(layout, *self.FILE_SELECTORS[0])
-        layout.addSpacing(20)
-
-        group_box = QGroupBox('Файлы для настройки')
-        group_layout = QVBoxLayout(group_box)
-
-        for label, key, file_type in self.FILE_SELECTORS[1:]:
-            self.add_file_selector(group_layout, label, key, file_type)
-
-        layout.addWidget(group_box)
+        for label, key, ext in self.FILE_SELECTORS:
+            self.add_file_selector(layout, label, key, ext)
 
         self.add_buttons(layout)
 
@@ -59,12 +47,12 @@ class FileDialogWindow(QWidget):
         hbox.addWidget(line_edit)
         layout.addLayout(hbox)
 
-        self.text_fields[key] = line_edit  # Сохраняем QLineEdit с ключом
+        self.text_fields[key] = line_edit
 
     def showEvent(self, event):
         # Загружаем пути перед показом окна
         try:
-            self.paths = read_json_file(CONFIG_FILE, EMPTY_PATH)
+            self.paths = read_json_file(CONFIG_FILE, EMPTY_PATH_NEW_SETTINGS)['new_settings']
             for key, line_edit in self.text_fields.items():
                 line_edit.setText(self.paths.get(key, ''))
             super().showEvent(event)
@@ -89,17 +77,17 @@ class FileDialogWindow(QWidget):
         hbox.addWidget(save_button)
 
         cancel_button = QPushButton('Отмена')
-        cancel_button.clicked.connect(self.close_without_saving)
+        cancel_button.clicked.connect(self.close)
         hbox.addWidget(cancel_button)
 
         layout.addLayout(hbox)
 
     def save_paths(self):
-        write_json_file(CONFIG_FILE, self.paths)
-        print('Изменения сохранены.')
-        self.close()
-
-    def close_without_saving(self):
-        self.paths = read_json_file(CONFIG_FILE, DEFAULT_PATHS)
-        print('Изменения отменены.')
+        try:
+            current_data = read_json_file(CONFIG_FILE)
+            current_data['new_settings'] = self.paths
+            write_json_file(CONFIG_FILE, current_data)
+            print('Изменения сохранены.')
+        except Exception as e:
+            print(f'Ошибка при сохранении: {e}')
         self.close()
